@@ -104,3 +104,6 @@ ENV/
 .ipynb_checkpoints/
 
 /sms-env
+
+*-sms-*.xml
+*-sms-*.xlsx
