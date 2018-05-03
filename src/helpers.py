@@ -1,5 +1,6 @@
 from sklearn import metrics
 import pandas as pd
+import numpy as np
 
 def calc_metrics(y_test, pred, proba=None, labels=None, print_=True, mode="weighted"):
     output = {}
@@ -16,6 +17,8 @@ def calc_metrics(y_test, pred, proba=None, labels=None, print_=True, mode="weigh
     else:
         columns = None
         index = None
+    if not all(el in labels for el in y_test):
+        labels = np.unique(y_test)
     conf_matrix = pd.DataFrame(metrics.confusion_matrix(y_test, pred, labels=labels),
                                columns=columns, index=index)
     report = metrics.classification_report(y_true=y_test, y_pred=pred, labels=labels)
