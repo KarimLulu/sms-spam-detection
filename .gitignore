@@ -106,4 +106,4 @@ ENV/
 /sms-env
 
 *-sms-*.xml
-*-sms-*.xlsx
+*.xlsx
