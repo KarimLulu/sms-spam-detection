@@ -2,6 +2,29 @@ from sklearn import metrics
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
+import dill
+
+from src.config import models_dir
+
+def init_dir(dir_name):
+    """Recursively creates directory dir_name and doesn't raise exception if it exists"""
+    if not dir_name.exists():
+        Path(dir_name).mkdir(parents=True)
+
+def save_model(model, filename):
+    init_dir(models_dir)
+    with open(models_dir / filename, "wb+") as f:
+        dill.dump(model, f)
+
+def load_model(filename):
+    with open(models_dir / filename, "rb") as f:
+        model = dill.load(f)
+    return model
+
+def print_dict(data):
+    for key, value in data.items():
+        print(f"{key}: {value:0.3f}")
 
 def calc_metrics(y_test, pred, proba=None, labels=None, print_=True, mode="binary"):
     output = {}
