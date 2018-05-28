@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import re
+import regex
 from scipy import sparse
 from sklearn.base import BaseEstimator, TransformerMixin, ClassifierMixin
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -120,22 +121,26 @@ class TfIdfLen(Transformer):
             res = sparse.hstack([res, lens]).tocsr()
         return res
 
+# LIB_MAP = {"re": re,
+#            "regex": regex}
 
 class MatchPattern(Transformer):
 
-    def __init__(self, pattern, is_len, flags=re.U):
+    def __init__(self, pattern, is_len, flags=re.U,
+                 lib="re"):
         self.pattern = pattern
         self.is_len = is_len
         self.flags = flags
+        self._lib = lib
 
     def get_params(self, deep=True):
         return dict(pattern=self.pattern, is_len=self.is_len, flags=self.flags)
 
     def transform(self, X, **kwargs):
         if self.is_len:
-            func = lambda text: len(re.findall(self.pattern, text, self.flags))
+            func = lambda text: len(eval(self._lib).findall(self.pattern, text, self.flags))
         else:
-            func = lambda text: bool(re.search(self.pattern, text, self.flags))
+            func = lambda text: bool(eval(self._lib).search(self.pattern, text, self.flags))
         rez = np.vectorize(func)(X).astype(int)
         return unsquash(rez)
 

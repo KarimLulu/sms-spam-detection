@@ -68,7 +68,7 @@ def get_len_pipe(use_tfidf=True, vec_pipe=None):
         len_pipe.insert(0, ("vec", vec_pipe))
     return Pipeline(len_pipe)
 
-def build_transform_pipe(tf_params, add_len=True, vec_mode="add", patterns=PATTERNS):
+def build_transform_pipe(tf_params=TF_PARAMS, add_len=True, vec_mode="add", patterns=PATTERNS):
     vec_pipe = get_vec_pipe(add_len, tf_params)
     if vec_mode == "only":
         return vec_pipe
@@ -128,7 +128,7 @@ def class_report(conf_mat):
     measures['f1'] = 2*tp / (2*tp + fp + fn)
     return measures
 
-def grid_search(tf_params, filename=DATAFILE, random_state=25, vec_mode="all",
+def grid_search(tf_params=TF_PARAMS, filename=DATAFILE, random_state=25, vec_mode="all",
                 n_splits=5, log=True, grid="grid_s", transformer_grid={},
                 scoring="f1", estimator_names=NAMES, patterns=PATTERNS,
                 n_jobs=-1):
