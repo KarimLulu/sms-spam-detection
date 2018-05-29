@@ -9,8 +9,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 import pandas as pd
 import numpy as np
+from nltk.tokenize import word_tokenize
 
-from src.transformers import ModelTransformer, TfIdfLen, MatchPattern, Length, Converter
+from src.transformers import (ModelTransformer, TfIdfLen, MatchPattern, Length, Converter,
+                              TokenFeatures)
 from src.config import data_dir
 from src.helpers import print_dict, save_model, load_model, calc_metrics
 
@@ -33,6 +35,7 @@ TF_PARAMS = {"lowercase": True,
              "norm": "l2"*0,
              "use_idf": 1
              }
+TOKEN_FEATURES = ["is_upper", "is_lower"]
 
 def build_ensemble(model_list, estimator=None):
     models = []
@@ -53,6 +56,18 @@ def get_vec_pipe(add_len=True, tfidf_params={}):
         ('vec', vectorizer)]
     return Pipeline(vec_pipe)
 
+def is_lower(tokens):
+    return any(token.islower() for token in tokens)
+
+def is_upper(tokens):
+    return any(token.isupper() for token in tokens)
+
+def get_tokens_pipe(tokenizer=word_tokenize, features=TOKEN_FEATURES):
+    token_features = TokenFeatures(tokenizer, features=features)
+    tok_pipe = [
+        ('tok', token_features)]
+    return Pipeline(tok_pipe)
+
 def get_pattern_pipe(patterns):
     pipes = []
     for i, (patt, params) in enumerate(patterns):
@@ -68,16 +83,19 @@ def get_len_pipe(use_tfidf=True, vec_pipe=None):
         len_pipe.insert(0, ("vec", vec_pipe))
     return Pipeline(len_pipe)
 
-def build_transform_pipe(tf_params=TF_PARAMS, add_len=True, vec_mode="add", patterns=PATTERNS):
+def build_transform_pipe(tf_params=TF_PARAMS, add_len=True, vec_mode="add", patterns=PATTERNS,
+                         tokenizer=word_tokenize, features=TOKEN_FEATURES):
     vec_pipe = get_vec_pipe(add_len, tf_params)
     if vec_mode == "only":
         return vec_pipe
     patt_pipe = get_pattern_pipe(patterns)
+    tok_pipe = get_tokens_pipe(tokenizer, features)
     chain = [
         ('converter', Converter()),
         ('union', FeatureUnion([
             ('vec', vec_pipe),
-            *patt_pipe
+            *patt_pipe,
+            ("tok", tok_pipe)
         ]))
     ]
     return chain
@@ -94,8 +112,8 @@ def build_classifier(name, seed=25):
     model.name = name
     return model
 
-def get_estimator_pipe(name, model, tf_params, vec_mode="add", patterns=PATTERNS):
-    chain = build_transform_pipe(tf_params, vec_mode=vec_mode, patterns=patterns)
+def get_estimator_pipe(name, model, tf_params, vec_mode="add", patterns=PATTERNS, features=TOKEN_FEATURES):
+    chain = build_transform_pipe(tf_params, vec_mode=vec_mode, patterns=patterns, features=features)
     chain.append((name, model))
     pipe = Pipeline(chain)
     pipe.name = name
@@ -104,9 +122,9 @@ def get_estimator_pipe(name, model, tf_params, vec_mode="add", patterns=PATTERNS
 def get_all_classifiers(names):
     return [build_classifier(name) for name in names]
 
-def build_all_pipes(tf_params, vec_mode="add", names=NAMES, patterns=PATTERNS):
+def build_all_pipes(tf_params, vec_mode="add", names=NAMES, patterns=PATTERNS, features=TOKEN_FEATURES):
     clfs = get_all_classifiers(names)
-    return [get_estimator_pipe(clf.name, clf, tf_params, vec_mode, patterns=patterns) for clf in clfs]
+    return [get_estimator_pipe(clf.name, clf, tf_params, vec_mode, patterns=patterns, features=features) for clf in clfs]
 
 def preprocess(data):
     data = data.loc[data.text.notnull()]
@@ -131,14 +149,15 @@ def class_report(conf_mat):
 def grid_search(tf_params=TF_PARAMS, filename=DATAFILE, random_state=25, vec_mode="all",
                 n_splits=5, log=True, grid="grid_s", transformer_grid={},
                 scoring="f1", estimator_names=NAMES, patterns=PATTERNS,
-                n_jobs=-1):
+                n_jobs=-1, features=TOKEN_FEATURES):
 
     data = load_data(filename)
     X, y = data["text"], data["label"]
     cv_splitter = StratifiedKFold(n_splits=n_splits, random_state=random_state,
                                   shuffle=True)
     # Build pipelines
-    pipes = build_all_pipes(tf_params, names=estimator_names, vec_mode=vec_mode, patterns=patterns)
+    pipes = build_all_pipes(tf_params, names=estimator_names, vec_mode=vec_mode, patterns=patterns,
+                            features=features)
 
     best = []
     best_scores = []
@@ -163,7 +182,7 @@ def grid_search(tf_params=TF_PARAMS, filename=DATAFILE, random_state=25, vec_mod
                             "std": temp[-1].std()})
     return best, best_scores
 
-def analyze_model(model=None, modelfile=None, datafile=None, n_splits=5, random_state=25,
+def analyze_model(model=None, modelfile=None, datafile=DATAFILE, n_splits=5, random_state=25,
                   labels=["ham", "spam"], mode="binary", log_fold=True, log_total=True):
     if model is None:
         model = load_model(modelfile)

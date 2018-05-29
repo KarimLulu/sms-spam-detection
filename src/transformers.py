@@ -6,6 +6,7 @@ from scipy import sparse
 from sklearn.base import BaseEstimator, TransformerMixin, ClassifierMixin
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import binarize
+from nltk.tokenize import word_tokenize
 
 def unsquash(X):
     ''' (n,) -> (n,1) '''
@@ -121,9 +122,6 @@ class TfIdfLen(Transformer):
             res = sparse.hstack([res, lens]).tocsr()
         return res
 
-# LIB_MAP = {"re": re,
-#            "regex": regex}
-
 class MatchPattern(Transformer):
 
     def __init__(self, pattern, is_len, flags=re.U,
@@ -143,6 +141,62 @@ class MatchPattern(Transformer):
             func = lambda text: bool(eval(self._lib).search(self.pattern, text, self.flags))
         rez = np.vectorize(func)(X).astype(int)
         return unsquash(rez)
+
+
+class TokenFeatures(Transformer):
+
+    def __init__(self, tokenizer=word_tokenize, features=None):
+        self.tokenizer = tokenizer
+        self.features = features
+
+    def get_params(self, deep=True):
+        return dict()
+
+    def _get_features(self, tokens):
+        output = []
+        for f in self.features:
+            output.append(eval(f)(tokens))
+        return np.array(output)
+
+    def _job(self, text):
+        tokens = self.tokenizer(text)
+        return self._get_features(tokens)
+
+    def transform(self, X, **kwargs):
+        rez = []
+        for record in X:
+            temp = self._job(record)
+            rez.append(temp)
+        return np.array(rez)
+
+
+class Select(Transformer):
+    '''  Extract specified columns from a pandas df or numpy array '''
+
+    def __init__(self, columns=0, to_np=True):
+        self.columns = columns
+        self.to_np = to_np
+
+    def get_params(self, deep=True):
+        return dict(columns=self.columns, to_np=self.to_np)
+
+    def transform(self, X, **transform_params):
+        if isinstance(X, pd.DataFrame):
+            allint = isinstance(self.columns, int) or (isinstance(self.columns, list) and all([isinstance(x, int) for x in self.columns]))
+            if allint:
+                res = X.ix[:, self.columns]
+            elif all([isinstance(x, str) for x in self.columns]):
+                res = X[self.columns]
+            else:
+                print("Select error: mixed or wrong column type.")
+                res = X
+
+            if self.to_np:
+                res = unsquash(res.values)
+        else:
+            res = unsquash(X[:, self.columns])
+
+        return res
 
 
 class EnsembleBinaryClassifier(BaseEstimator, ClassifierMixin, TransformerMixin):
