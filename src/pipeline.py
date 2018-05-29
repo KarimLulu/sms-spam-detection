@@ -12,15 +12,20 @@ import numpy as np
 from nltk.tokenize import word_tokenize
 
 from src.transformers import (ModelTransformer, TfIdfLen, MatchPattern, Length, Converter,
-                              TokenFeatures)
+                              TokenFeatures, Select)
 from src.config import data_dir
 from src.helpers import print_dict, save_model, load_model, calc_metrics
 
+CURRENCY_PATT = u"[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]"
 PATTERNS = [(r"[\(\d][\d\s\(\)-]{8,15}\d", {"name": "phone",
                                             "is_len": 0}),
-           (r"%|taxi|скидк|цін", {"name": "custom",
-                                  "is_len": 0,
-                                  "flags": re.I | re.U})
+           (r"%|taxi|скид(?:к|очн)|ц[іе]н|знижк", {"name": 
+                                                   "custom","is_len": 0, 
+                                                   "flags": re.I | re.U}),
+            (r"[.]", {"name": "dot", "is_len": 0}),
+            (CURRENCY_PATT, {"name": "currency", "is_len": 0, "flags": re.U}),
+            (r":\)|:\(|-_-|:p|:v|:\*|:o|B-\)|:’\(", {"name": "emoji", "is_len": 0, "flags": re.U}),
+            (r"[0-9]{2,4}[.-/][0-9]{2,4}[.-/][0-9]{2,4}", {"name": "date", "is_len": 0})
            ]
 NAMES = ["logit", "nb"]
 DATAFILE = 'sms-uk-total.xlsx'
@@ -56,15 +61,10 @@ def get_vec_pipe(add_len=True, tfidf_params={}):
         ('vec', vectorizer)]
     return Pipeline(vec_pipe)
 
-def is_lower(tokens):
-    return any(token.islower() for token in tokens)
-
-def is_upper(tokens):
-    return any(token.isupper() for token in tokens)
-
 def get_tokens_pipe(tokenizer=word_tokenize, features=TOKEN_FEATURES):
     token_features = TokenFeatures(tokenizer, features=features)
     tok_pipe = [
+        ("selector", Select(["tokens"], to_np=0)),
         ('tok', token_features)]
     return Pipeline(tok_pipe)
 
@@ -83,22 +83,24 @@ def get_len_pipe(use_tfidf=True, vec_pipe=None):
         len_pipe.insert(0, ("vec", vec_pipe))
     return Pipeline(len_pipe)
 
-def build_transform_pipe(tf_params=TF_PARAMS, add_len=True, vec_mode="add", patterns=PATTERNS,
-                         tokenizer=word_tokenize, features=TOKEN_FEATURES):
+def build_transform_pipe(tf_params=TF_PARAMS, add_len=True, vec_mode="add", 
+                         patterns=PATTERNS, tokenizer=word_tokenize, features=TOKEN_FEATURES):
     vec_pipe = get_vec_pipe(add_len, tf_params)
     if vec_mode == "only":
         return vec_pipe
     patt_pipe = get_pattern_pipe(patterns)
-    tok_pipe = get_tokens_pipe(tokenizer, features)
     chain = [
+        ('selector', Select(["text"], to_np=0)),
         ('converter', Converter()),
         ('union', FeatureUnion([
             ('vec', vec_pipe),
-            *patt_pipe,
-            ("tok", tok_pipe)
+            *patt_pipe
         ]))
     ]
-    return chain
+    tok_pipe = get_tokens_pipe(tokenizer, features)
+    final_chain = FeatureUnion([("chain", Pipeline(chain)),
+                                ("tok", tok_pipe)])
+    return [("final_chain", final_chain)]
 
 def build_classifier(name, seed=25):
     if name == "logit":
@@ -128,7 +130,8 @@ def build_all_pipes(tf_params, vec_mode="add", names=NAMES, patterns=PATTERNS, f
 
 def preprocess(data):
     data = data.loc[data.text.notnull()]
-    data["text"] = data["text"].str.replace(r"[\n\r]+", "")
+    data["text"] = data["text"].str.replace(r"[\n\r]+", " ")
+    data["tokens"] = data["text"].map(word_tokenize)
     return data
 
 def load_data(filename=DATAFILE):
@@ -152,7 +155,7 @@ def grid_search(tf_params=TF_PARAMS, filename=DATAFILE, random_state=25, vec_mod
                 n_jobs=-1, features=TOKEN_FEATURES):
 
     data = load_data(filename)
-    X, y = data["text"], data["label"]
+    X, y = data[["text", "tokens"]], data["label"]
     cv_splitter = StratifiedKFold(n_splits=n_splits, random_state=random_state,
                                   shuffle=True)
     # Build pipelines
@@ -188,7 +191,7 @@ def analyze_model(model=None, modelfile=None, datafile=DATAFILE, n_splits=5, ran
         model = load_model(modelfile)
 
     data = load_data(datafile)
-    X, y = data["text"], data["label"]
+    X, y = data[["text", "tokens"]], data["label"]
 
     cv_splitter = StratifiedKFold(n_splits=n_splits, random_state=random_state,
                                   shuffle=True)

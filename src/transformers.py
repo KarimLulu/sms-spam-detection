@@ -21,6 +21,13 @@ def squash(X):
     return np.squeeze(np.asarray(X))
 
 
+def is_lower(tokens):
+    return any(token.islower() for token in tokens)
+
+def is_upper(tokens):
+    return any(token.isupper() for token in tokens)
+
+
 class Transformer(TransformerMixin):
     '''Base class for pure transformers'''
 
@@ -145,7 +152,7 @@ class MatchPattern(Transformer):
 
 class TokenFeatures(Transformer):
 
-    def __init__(self, tokenizer=word_tokenize, features=None):
+    def __init__(self, tokenizer=word_tokenize, features=list()):
         self.tokenizer = tokenizer
         self.features = features
 
@@ -158,14 +165,10 @@ class TokenFeatures(Transformer):
             output.append(eval(f)(tokens))
         return np.array(output)
 
-    def _job(self, text):
-        tokens = self.tokenizer(text)
-        return self._get_features(tokens)
-
     def transform(self, X, **kwargs):
         rez = []
         for record in X:
-            temp = self._job(record)
+            temp = self._get_features(record)
             rez.append(temp)
         return np.array(rez)
 
@@ -186,7 +189,10 @@ class Select(Transformer):
             if allint:
                 res = X.ix[:, self.columns]
             elif all([isinstance(x, str) for x in self.columns]):
-                res = X[self.columns]
+                if len(self.columns) == 1:
+                    res = X[self.columns[0]]
+                else:
+                    res = X[self.columns]
             else:
                 print("Select error: mixed or wrong column type.")
                 res = X
