@@ -2,6 +2,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import re
+import json
 from datetime import datetime
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.naive_bayes import MultinomialNB
@@ -9,12 +10,13 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 import pandas as pd
 import numpy as np
+from operator import itemgetter
 from nltk.tokenize import word_tokenize
 
 from src.transformers import (ModelTransformer, TfIdfLen, MatchPattern, Length, Converter,
                               TokenFeatures, Select)
-from src.config import data_dir
-from src.helpers import print_dict, save_model, load_model, calc_metrics
+from src.config import data_dir, models_dir
+from src.helpers import print_dict, save_model, load_model, calc_metrics, _to_int
 
 CURRENCY_PATT = u"[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]"
 PATTERNS = [(r"[\(\d][\d\s\(\)-]{8,15}\d", {"name": "phone",
@@ -27,7 +29,7 @@ PATTERNS = [(r"[\(\d][\d\s\(\)-]{8,15}\d", {"name": "phone",
             (r":\)|:\(|-_-|:p|:v|:\*|:o|B-\)|:’\(", {"name": "emoji", "is_len": 0, "flags": re.U}),
             (r"[0-9]{2,4}[.-/][0-9]{2,4}[.-/][0-9]{2,4}", {"name": "date", "is_len": 0})
            ]
-NAMES = ["logit", "nb"]
+NAMES = ["logit"]#, "nb"]
 DATAFILE = 'sms-uk-total.xlsx'
 TF_PARAMS = {"lowercase": True,
              "analyzer": "char_wb",
@@ -61,8 +63,8 @@ def get_vec_pipe(add_len=True, tfidf_params={}):
         ('vec', vectorizer)]
     return Pipeline(vec_pipe)
 
-def get_tokens_pipe(tokenizer=word_tokenize, features=TOKEN_FEATURES):
-    token_features = TokenFeatures(tokenizer, features=features)
+def get_tokens_pipe(features=TOKEN_FEATURES):
+    token_features = TokenFeatures(features=features)
     tok_pipe = [
         ("selector", Select(["tokens"], to_np=0)),
         ('tok', token_features)]
@@ -84,7 +86,7 @@ def get_len_pipe(use_tfidf=True, vec_pipe=None):
     return Pipeline(len_pipe)
 
 def build_transform_pipe(tf_params=TF_PARAMS, add_len=True, vec_mode="add", 
-                         patterns=PATTERNS, tokenizer=word_tokenize, features=TOKEN_FEATURES):
+                         patterns=PATTERNS, features=TOKEN_FEATURES):
     vec_pipe = get_vec_pipe(add_len, tf_params)
     if vec_mode == "only":
         return vec_pipe
@@ -97,7 +99,7 @@ def build_transform_pipe(tf_params=TF_PARAMS, add_len=True, vec_mode="add",
             *patt_pipe
         ]))
     ]
-    tok_pipe = get_tokens_pipe(tokenizer, features)
+    tok_pipe = get_tokens_pipe(features)
     final_chain = FeatureUnion([("chain", Pipeline(chain)),
                                 ("tok", tok_pipe)])
     return [("final_chain", final_chain)]
@@ -182,7 +184,7 @@ def grid_search(tf_params=TF_PARAMS, filename=DATAFILE, random_state=25, vec_mod
         best.append(gs.best_estimator_)
         temp = [el for el in gs.grid_scores_ if el.parameters==gs.best_params_][0]
         best_scores.append({"params": temp[0], "mean": temp[1], "scores": temp[-1],
-                            "std": temp[-1].std()})
+                            "std": temp[-1].std(), "scoring": scoring})
     return best, best_scores
 
 def analyze_model(model=None, modelfile=None, datafile=DATAFILE, n_splits=5, random_state=25,
@@ -221,9 +223,9 @@ def analyze_model(model=None, modelfile=None, datafile=DATAFILE, n_splits=5, ran
         fp_i = np.where((pred==1) & (y_test==0))[0]
         fn_i = np.where((pred==0) & (y_test==1))[0]
         record = {"fold": i+1,
-                  "conf_matrix": fold_conf_matrix,
-                  "fp": test_idx[fp_i],
-                  "fn": test_idx[fn_i]}
+                  "conf_matrix": fold_conf_matrix.to_dict(),
+                  "fp": test_idx[fp_i].tolist(),
+                  "fn": test_idx[fn_i].tolist()}
 
         results.append(record)
         scores.append(metrics)
@@ -237,6 +239,11 @@ def analyze_model(model=None, modelfile=None, datafile=DATAFILE, n_splits=5, ran
             print(fold_conf_matrix)
     conf_matrix /= n_splits
     scores = pd.DataFrame(scores)
+    agg_scores = {}
+    for mean, std in zip(scores.mean().to_dict().items(), scores.std().to_dict().items()):
+       agg_scores[mean[0]] = {"mean": mean[1], 
+                              "std": std[1]}
+
     if log_total:
         print("\nOverall results")
         for mean, std in zip(scores.mean().to_dict().items(), scores.std().to_dict().items()):
@@ -245,9 +252,41 @@ def analyze_model(model=None, modelfile=None, datafile=DATAFILE, n_splits=5, ran
         print(conf_matrix)
         print("\nMean metrics")
         print_dict(class_report(conf_matrix))
-    return scores, results, conf_matrix, {"fn": sorted(fns), "fp": sorted(fps)}
+    return scores, agg_scores, results, conf_matrix, {"fn": _to_int(sorted(fns)), 
+                                          "fp": _to_int(sorted(fps))}
+
+def train(transformer_grid={}, tf_params=TF_PARAMS, datafile=DATAFILE):
+    best_estimators, best_scores = grid_search(transformer_grid=transformer_grid, 
+                                               tf_params=tf_params)
+    idx, elem = max(enumerate(best_scores), key=lambda x: x[-1]["mean"])
+    model = best_estimators[idx]
+    params, mean, std, scoring = itemgetter("params", "mean", "std", "scoring")(best_scores[idx])
+    scores, agg_scores, results, conf_matrix, fnp = analyze_model(model=model, datafile=datafile, 
+                                                                  log_fold=False)
+    # Train on the whole dataset
+    data = load_data(datafile)
+    X, y = data[["text", "tokens"]], data["label"]
+    model.fit(X, y)
+    return model, params, agg_scores, scores.to_dict(orient="list"), results, conf_matrix, fnp
+
+def construct_metadata(scores, agg_scores, params, fold_results, conf_matrix, fnp):
+    output = {}
+    output["agg_scores"] = agg_scores
+    output["scores"] = scores
+    output["params"] = params
+    output["fold_results"] = fold_results
+    output["mean_conf_matrix"] = {"matrix": conf_matrix.to_dict(),
+                                  "metrics": class_report(conf_matrix)}
+    output["fnp"] = fnp
+    return output
+
+def main(model_id="current_model"):
+    model, params, agg_scores, scores, fold_results, mean_conf_matrix, fnp = train()
+    metadata = construct_metadata(scores, agg_scores, params, fold_results, mean_conf_matrix, fnp)
+    save_model(model, f"{model_id}.dill")
+    with open(models_dir / f"{model_id}_metadata.json", "w+") as f:
+        json.dump(metadata, f, indent=4)
+
 
 if __name__ == "__main__":
-    grid_tf = {}
-    best_estimators, best_scores = grid_search(transformer_grid=grid_tf, tf_params=TF_PARAMS)
-    scores, results, conf_matrix, fnp = analyze_model(model=best_estimators[0], datafile=DATAFILE)
+    main()

@@ -152,8 +152,7 @@ class MatchPattern(Transformer):
 
 class TokenFeatures(Transformer):
 
-    def __init__(self, tokenizer=word_tokenize, features=list()):
-        self.tokenizer = tokenizer
+    def __init__(self, features=list()):
         self.features = features
 
     def get_params(self, deep=True):

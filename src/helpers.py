@@ -101,3 +101,6 @@ def plot_tfidf_classfeats_h(dfs):
         yticks = ax.set_yticklabels(df.feature)
         plt.subplots_adjust(bottom=0.09, right=0.97, left=0.15, top=0.95, wspace=0.52)
     plt.show()
+
+def _to_int(items):
+    return [int(item) for item in items]
