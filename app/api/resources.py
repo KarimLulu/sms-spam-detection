@@ -33,7 +33,7 @@ class SpamDetector(Resource):
             label = SPAM_LABEL
             confidence = spam_proba
 
-        confidence = round(confidence, ROUND)
+        confidence = round(confidence*100, ROUND)
 
         responseObject = {
             'status': 'success',

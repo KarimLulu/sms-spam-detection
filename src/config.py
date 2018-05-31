@@ -10,4 +10,4 @@ model_id = "current_model"
 THRESHOLD = 0.5
 SPAM_LABEL = "spam"
 HAM_LABEL = "ham"
-ROUND = 3
+ROUND = 1
