@@ -4,21 +4,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 import dill
+from nltk.tokenize import word_tokenize
 
-from src.config import models_dir
+from src.config import models_dir, model_extension
 
 def init_dir(dir_name):
     """Recursively creates directory dir_name and doesn't raise exception if it exists"""
     if not dir_name.exists():
         Path(dir_name).mkdir(parents=True)
 
-def save_model(model, filename):
+def save_model(model, name, models_dir=models_dir, extension=model_extension):
     init_dir(models_dir)
-    with open(models_dir / filename, "wb+") as f:
+    path = (models_dir / name).with_suffix(extension)
+    with path.open("wb+") as f:
         dill.dump(model, f)
 
-def load_model(filename):
-    with open(models_dir / filename, "rb") as f:
+def load_model(models_dir=models_dir, name='', extension=model_extension):
+    source = (models_dir / name).with_suffix(extension)
+    with source.open("rb") as f:
         model = dill.load(f)
     return model
 
@@ -104,3 +107,9 @@ def plot_tfidf_classfeats_h(dfs):
 
 def _to_int(items):
     return [int(item) for item in items]
+
+
+def prepare_sms(text):
+    sms = pd.DataFrame({"text": [text]})
+    sms["tokens"] =  sms["text"].map(word_tokenize)
+    return sms

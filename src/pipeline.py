@@ -15,14 +15,14 @@ from nltk.tokenize import word_tokenize
 
 from src.transformers import (ModelTransformer, TfIdfLen, MatchPattern, Length, Converter,
                               TokenFeatures, Select)
-from src.config import data_dir, models_dir
+from src.config import data_dir, models_dir, model_id
 from src.helpers import print_dict, save_model, load_model, calc_metrics, _to_int
 
 CURRENCY_PATT = u"[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]"
 PATTERNS = [(r"[\(\d][\d\s\(\)-]{8,15}\d", {"name": "phone",
                                             "is_len": 0}),
-           (r"%|taxi|скид(?:к|очн)|ц[іе]н|знижк", {"name": 
-                                                   "custom","is_len": 0, 
+           (r"%|taxi|скид(?:к|очн)|ц[іе]н|знижк", {"name":
+                                                   "custom","is_len": 0,
                                                    "flags": re.I | re.U}),
             (r"[.]", {"name": "dot", "is_len": 0}),
             (CURRENCY_PATT, {"name": "currency", "is_len": 0, "flags": re.U}),
@@ -85,7 +85,7 @@ def get_len_pipe(use_tfidf=True, vec_pipe=None):
         len_pipe.insert(0, ("vec", vec_pipe))
     return Pipeline(len_pipe)
 
-def build_transform_pipe(tf_params=TF_PARAMS, add_len=True, vec_mode="add", 
+def build_transform_pipe(tf_params=TF_PARAMS, add_len=True, vec_mode="add",
                          patterns=PATTERNS, features=TOKEN_FEATURES):
     vec_pipe = get_vec_pipe(add_len, tf_params)
     if vec_mode == "only":
@@ -241,7 +241,7 @@ def analyze_model(model=None, modelfile=None, datafile=DATAFILE, n_splits=5, ran
     scores = pd.DataFrame(scores)
     agg_scores = {}
     for mean, std in zip(scores.mean().to_dict().items(), scores.std().to_dict().items()):
-       agg_scores[mean[0]] = {"mean": mean[1], 
+       agg_scores[mean[0]] = {"mean": mean[1],
                               "std": std[1]}
 
     if log_total:
@@ -252,16 +252,16 @@ def analyze_model(model=None, modelfile=None, datafile=DATAFILE, n_splits=5, ran
         print(conf_matrix)
         print("\nMean metrics")
         print_dict(class_report(conf_matrix))
-    return scores, agg_scores, results, conf_matrix, {"fn": _to_int(sorted(fns)), 
+    return scores, agg_scores, results, conf_matrix, {"fn": _to_int(sorted(fns)),
                                           "fp": _to_int(sorted(fps))}
 
 def train(transformer_grid={}, tf_params=TF_PARAMS, datafile=DATAFILE):
-    best_estimators, best_scores = grid_search(transformer_grid=transformer_grid, 
+    best_estimators, best_scores = grid_search(transformer_grid=transformer_grid,
                                                tf_params=tf_params)
     idx, elem = max(enumerate(best_scores), key=lambda x: x[-1]["mean"])
     model = best_estimators[idx]
     params, mean, std, scoring = itemgetter("params", "mean", "std", "scoring")(best_scores[idx])
-    scores, agg_scores, results, conf_matrix, fnp = analyze_model(model=model, datafile=datafile, 
+    scores, agg_scores, results, conf_matrix, fnp = analyze_model(model=model, datafile=datafile,
                                                                   log_fold=False)
     # Train on the whole dataset
     data = load_data(datafile)
@@ -280,13 +280,12 @@ def construct_metadata(scores, agg_scores, params, fold_results, conf_matrix, fn
     output["fnp"] = fnp
     return output
 
-def main(model_id="current_model"):
+def main(model_id=model_id):
     model, params, agg_scores, scores, fold_results, mean_conf_matrix, fnp = train()
     metadata = construct_metadata(scores, agg_scores, params, fold_results, mean_conf_matrix, fnp)
-    save_model(model, f"{model_id}.dill")
+    save_model(model, f"{model_id}.model")
     with open(models_dir / f"{model_id}_metadata.json", "w+") as f:
         json.dump(metadata, f, indent=4)
-
 
 if __name__ == "__main__":
     main()
