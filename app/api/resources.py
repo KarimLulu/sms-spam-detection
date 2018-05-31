@@ -1,6 +1,7 @@
 import warnings
 warnings.filterwarnings("ignore")
 
+from flask import render_template, make_response
 from flask_restful import Resource, reqparse
 
 from . import api
@@ -13,6 +14,10 @@ parser = reqparse.RequestParser()
 parser.add_argument('text', help='This field cannot be blank', required=True)
 
 class SpamDetector(Resource):
+
+    def get(self):
+        headers = {'Content-Type': 'text/html'}
+        return make_response(render_template('index.html'), 200, headers)
 
     @post_response
     def post(self):
@@ -28,9 +33,13 @@ class SpamDetector(Resource):
             label = SPAM_LABEL
             confidence = spam_proba
 
+        confidence = round(confidence, ROUND)
+
         responseObject = {
             'status': 'success',
             'label': label,
-            'confidence': round(confidence, ROUND)}
+            'confidence': confidence}
 
-        return responseObject, 200
+        headers = {'Content-Type': 'text/html'}
+        return make_response(render_template('index.html', label=label, confidence=confidence), 200, headers)
+        #return responseObject, 200

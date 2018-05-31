@@ -4,4 +4,4 @@ api = Api()
 
 from .resources import SpamDetector
 
-api.add_resource(SpamDetector, '/detector')
+api.add_resource(SpamDetector, '/')
