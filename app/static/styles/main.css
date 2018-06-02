@@ -1,0 +1,18 @@
+.spam {
+    color: red;
+}
+
+.ham {
+    color: green;
+}
+
+textarea {
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+}
+
+h2 {
+
+	margin-left: 10;
+}
