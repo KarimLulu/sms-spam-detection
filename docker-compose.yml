@@ -1,0 +1,9 @@
+version: '3'
+services:
+  detector:
+    build: .
+    ports:
+      - "8000:5000"
+    volumes:
+      - ./data:/home/detector/data
+    restart: always
