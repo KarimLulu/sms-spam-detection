@@ -1,7 +1,24 @@
-# Welcome to SMS Spam Detection
+## Welcome to SMS Spam Detection
 
 ## What's SMS Spam Detection
 It is the final project for the course ["Data Science. NLP"](https://github.com/vseloved/prj-nlp). The main goal of the project was to build a detection system for a Ukrainian user.
+
+## Table of Contens
+
+Table of Contents
+=================
+
+<!--ts-->
+      * [Welcome to SMS Spam Detection](#welcome-to-sms-spam-detection)
+      * [What's SMS Spam Detection](#whats-sms-spam-detection)
+      * [Table of Contens](#table-of-contens)
+      * [Table of Contents](#table-of-contents)
+      * [Data Collection](#data-collection)
+      * [Machine Learning Pipeline](#machine-learning-pipeline)
+      * [Final Model Description](#final-model-description)
+      * [Getting Started](#getting-started)
+      * [License](#license)
+<!--te-->
 
 ## Data Collection
 
@@ -31,7 +48,21 @@ ML Pipeline and Transformers were built on top of scikit's Pipeline/TransformerM
 After determining the best model and parameters, it is fitted to a whole data set and dumped altogether with detailed metadata (performance on folds) [here](data/models).
 
 
-## 
+## Final Model Description
+
+Logistic regression with L2 penalty was selected as the best performing model using the folowing features (please see [here](src/pipeline.py)):
+
+* [Tf-Idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) character 4-grams with top 4000 features
+* Pattern based features:
+	* dot included?
+	* uppercased/lowercased word? (+ratios)
+	* bunch of RegExes (phone number, custom spam words, currency symbols, dates, etc.)
+	* emoji included?
+* Length based features:
+	* No. of words
+	* No. of chars
+	* No. of N-grams
+
 
 ## Getting Started
 
