@@ -36,18 +36,18 @@ After determining the best model and parameters, it is fitted to a whole data se
 ## Getting Started
 
 
-	1. Clone from the git repository:
-
+1. Clone from the git repository:
+	
 		$ git clone https://github.com/KarimLulu/sms-spam-detection.git
 	
-	2. Change directory to `sms-spam-detection` and start up the application:
+2. Change directory to `sms-spam-detection` and start up the application:
 
 		$ cd sms-spam-detection
-        $ docker-compose up
+		$ docker-compose up
 
-    3. Go to `http://localhost:8000` and submit text messages to test the system
+3. Go to `http://localhost:8000` and submit text messages to test the system
 
-    4. Enjoy!
+4. Enjoy!
 
 ## License
 
