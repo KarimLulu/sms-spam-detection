@@ -1,12 +1,9 @@
-## Welcome to SMS Spam Detection
-
 ## What's SMS Spam Detection
 It is the final project for the course ["Data Science. NLP"](https://github.com/vseloved/prj-nlp). The main goal of the project was to build a detection system for a Ukrainian user.
 
 ## Table of Contens
 
 <!--ts-->
-* [Welcome to SMS Spam Detection](#welcome-to-sms-spam-detection)
 * [What's SMS Spam Detection](#whats-sms-spam-detection)
 * [Table of Contens](#table-of-contens)
 * [Data Collection](#data-collection)
@@ -46,9 +43,15 @@ After determining the best model and parameters, it is fitted to a whole data se
 
 ## Final Model Description
 
-Logistic regression with L2 penalty was selected as the best performing model using the folowing features (please see [here](src/pipeline.py)):
+### Estimator
 
-* [Tf-Idf](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) character 4-grams with top 4000 features
+Logistic regression with L2 penalty was selected as the best performing model.
+
+### Features
+
+Here is the final set of features (please see [here](src/pipeline.py)):
+
+* [TF-IDF](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) character 4-grams with top 4000 features
 * Pattern based features:
 	* dot included?
 	* uppercased/lowercased word? (+ratios)
@@ -58,6 +61,20 @@ Logistic regression with L2 penalty was selected as the best performing model us
 	* No. of words
 	* No. of chars
 	* No. of N-grams
+
+### Performance
+
+* AUC: 99.5%
+* Accuracy: 98.4%
+* Precision: 96.4%
+* F1: 96.03%
+* Recall: 95.6%
+* Averaged across folds confusion matrix:
+
+| | Ham | Spam |
+|---| --- | --- |
+| Pred Ham | 968.8 | 10.6
+| Pred Spam | 8.6 | 232.6
 
 
 ## Getting Started
