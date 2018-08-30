@@ -5,19 +5,15 @@ It is the final project for the course ["Data Science. NLP"](https://github.com/
 
 ## Table of Contens
 
-Table of Contents
-=================
-
 <!--ts-->
-      * [Welcome to SMS Spam Detection](#welcome-to-sms-spam-detection)
-      * [What's SMS Spam Detection](#whats-sms-spam-detection)
-      * [Table of Contens](#table-of-contens)
-      * [Table of Contents](#table-of-contents)
-      * [Data Collection](#data-collection)
-      * [Machine Learning Pipeline](#machine-learning-pipeline)
-      * [Final Model Description](#final-model-description)
-      * [Getting Started](#getting-started)
-      * [License](#license)
+* [Welcome to SMS Spam Detection](#welcome-to-sms-spam-detection)
+* [What's SMS Spam Detection](#whats-sms-spam-detection)
+* [Table of Contens](#table-of-contens)
+* [Data Collection](#data-collection)
+* [Machine Learning Pipeline](#machine-learning-pipeline)
+* [Final Model Description](#final-model-description)
+* [Getting Started](#getting-started)
+* [License](#license)
 <!--te-->
 
 ## Data Collection
