@@ -9,6 +9,9 @@ It is the final project for the course ["Data Science. NLP"](https://github.com/
 * [Data Collection](#data-collection)
 * [Machine Learning Pipeline](#machine-learning-pipeline)
 * [Final Model Description](#final-model-description)
+	* [Estimator](#estimator)
+	* [Features](#features)
+	* [Performance](#performance)
 * [Getting Started](#getting-started)
 * [License](#license)
 <!--te-->
