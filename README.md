@@ -67,7 +67,7 @@ Here is the final set of features (please see [here](src/pipeline.py)):
 
 ### Performance
 
-* AUC: 99.5%
+* ROC-AUC: 99.5%
 * Accuracy: 98.4%
 * Precision: 96.4%
 * F1: 96.03%
