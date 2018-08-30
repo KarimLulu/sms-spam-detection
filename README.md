@@ -71,10 +71,10 @@ Here is the final set of features (please see [here](src/pipeline.py)):
 * Recall: 95.6%
 * Averaged across folds confusion matrix:
 
-| | Ham | Spam |
-|---| --- | --- |
-| Pred Ham | 968.8 | 10.6
-| Pred Spam | 8.6 | 232.6
+    | | Ham | Spam |
+    |---| --- | --- |
+    | Pred Ham | 968.8 | 10.6
+    | Pred Spam | 8.6 | 232.6
 
 
 ## Getting Started
