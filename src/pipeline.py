@@ -12,10 +12,11 @@ import pandas as pd
 import numpy as np
 from operator import itemgetter
 from nltk.tokenize import word_tokenize
+import sys
 
 from src.transformers import (ModelTransformer, TfIdfLen, MatchPattern, Length, Converter,
                               TokenFeatures, Select)
-from src.config import data_dir, models_dir, model_id
+from src.config import data_dir, models_dir, model_id, DATAFILE
 from src.helpers import print_dict, save_model, load_model, calc_metrics, _to_int
 
 CURRENCY_PATT = u"[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]"
@@ -29,8 +30,7 @@ PATTERNS = [(r"[\(\d][\d\s\(\)-]{8,15}\d", {"name": "phone",
             (r":\)|:\(|-_-|:p|:v|:\*|:o|B-\)|:’\(", {"name": "emoji", "is_len": 0, "flags": re.U}),
             (r"[0-9]{2,4}[.-/][0-9]{2,4}[.-/][0-9]{2,4}", {"name": "date", "is_len": 0})
            ]
-NAMES = ["logit"]#, "nb"]
-DATAFILE = 'sms-uk-total.xlsx'
+NAMES = ["logit"]
 TF_PARAMS = {"lowercase": True,
              "analyzer": "char_wb",
              "stop_words": None,
@@ -110,7 +110,7 @@ def build_classifier(name, seed=25):
         model.grid_s = {f'{name}__C' : (0.1, 0.2, 0.3, 0.4, 0.5, 1, 5, 10)}
         model.grid_b = {f'{name}__C' : [(1)]}
     elif name == "nb":
-        model = MultinomialNB(alpha=0.1) #class_prior=[0.5, 0.5])
+        model = MultinomialNB(alpha=0.1) #class_prior=[0.5, 0.5]
         model.grid_s = {f'{name}__alpha' : (0.1, 0.5, 1, 5, 10)}
         model.grid_b = {f'{name}__alpha' : [(1)]}
     model.name = name
@@ -145,8 +145,8 @@ def class_report(conf_mat):
     tp, fp, fn, tn = conf_mat.values.flatten()
     measures = {}
     measures['accuracy'] = (tp + tn) / (tp + fp + fn + tn)
-    measures['specificity'] = tn / (tn + fp)        # (true negative rate)
-    measures['recall'] = tp / (tp + fn)        # (recall, true positive rate)
+    measures['specificity'] = tn / (tn + fp) # (true negative rate)
+    measures['recall'] = tp / (tp + fn)      # (recall, true positive rate)
     measures['precision'] = tp / (tp + fp)
     measures['f1'] = 2*tp / (2*tp + fp + fn)
     return measures
@@ -286,6 +286,8 @@ def main(model_id=model_id):
     save_model(model, f"{model_id}.model")
     with open(models_dir / f"{model_id}_metadata.json", "w+") as f:
         json.dump(metadata, f, indent=4)
+    return 0
 
 if __name__ == "__main__":
-    main()
+    code = main()
+    sys.exit(code)

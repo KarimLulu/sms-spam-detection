@@ -33,7 +33,7 @@ def detector():
             label = category = SPAM_LABEL
             confidence = spam_proba
 
-        confidence = round(confidence*100, ROUND)
+        confidence = round(confidence * 100, ROUND)
         flash(f'Label: {label}', category=category)
         flash(f'Confidence: {confidence} %', category=category)
     return make_response(render_template('main.html', form=form), 200, headers)

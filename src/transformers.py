@@ -225,4 +225,3 @@ class EnsembleBinaryClassifier(BaseEstimator, ClassifierMixin, TransformerMixin)
         else:
             res = binarize(X, 0.5)
             return np.apply_along_axis(lambda x: np.bincount(x.astype(int), self.weights).argmax(), axis=1, arr=res)
-

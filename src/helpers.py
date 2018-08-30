@@ -108,7 +108,6 @@ def plot_tfidf_classfeats_h(dfs):
 def _to_int(items):
     return [int(item) for item in items]
 
-
 def prepare_sms(text):
     sms = pd.DataFrame({"text": [text]})
     sms["tokens"] =  sms["text"].map(word_tokenize)
