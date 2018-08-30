@@ -1,5 +1,5 @@
 ## What's SMS Spam Detection
-It is the final project for the course ["Data Science. NLP"](https://github.com/vseloved/prj-nlp). The main goal of the project was to build a detection system for a Ukrainian user.
+It is the final project for the course ["Data Science. NLP"](https://github.com/vseloved/prj-nlp). The main goal of the project was to build a detection system for a Ukrainian user. Presentation from the project defense can be accessed [here](https://docs.google.com/presentation/d/e/2PACX-1vQDGvXABqpZcqhVr1FFcxMPaG0WkaSkYYxoCj5zcXVlUmAK_KZxdyFKajixlsEsp6XJ80GY4r-ATFsw/pub?start=false&loop=false&delayms=3000&slide=id.g588e0d797198c72c_10).
 
 ## Table of Contens
 
@@ -44,7 +44,7 @@ ML Pipeline and Transformers were built on top of scikit's Pipeline/TransformerM
 After determining the best model and parameters, it is fitted to a whole data set and dumped altogether with detailed metadata (performance on folds) [here](data/models).
 
 
-## Final Model Description
+## Model Description
 
 ### Estimator
 
