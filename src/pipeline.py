@@ -22,8 +22,8 @@ from src.helpers import print_dict, save_model, load_model, calc_metrics, _to_in
 CURRENCY_PATT = u"[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]"
 PATTERNS = [(r"[\(\d][\d\s\(\)-]{8,15}\d", {"name": "phone",
                                             "is_len": 0}),
-           (r"%|taxi|скид(?:к|очн)|ц[іе]н|знижк", {"name":
-                                                   "custom","is_len": 0,
+           (r"%|taxi|скид(?:к|очн)|ц[іе]н|знижк", {"name": "custom",
+                                                   "is_len": 0,
                                                    "flags": re.I | re.U}),
             (r"[.]", {"name": "dot", "is_len": 0}),
             (CURRENCY_PATT, {"name": "currency", "is_len": 0, "flags": re.U}),
