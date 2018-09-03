@@ -33,7 +33,7 @@ So, here is basic statistics about the final data set:
 
 ## Machine Learning Pipeline
 
-ML Pipeline and Transformers were built on top of scikit's Pipeline/TransformerMixin classes. Transformers and Pipeline can be accessed [here](src/transformers.py) and [here](src/pipeline.py) respectively. Pipeline consists of several steps:
+ML Pipeline and Transformers were built on top of scikit's Pipeline/TransformerMixin classes. Transformers and Pipeline can be accessed [here](https://github.com/KarimLulu/sms-spam-detection/blob/master/src/transformers.py) and [here](https://github.com/KarimLulu/sms-spam-detection/blob/master/src/pipeline.py) respectively. Pipeline consists of several steps:
 
 * Data loading and preparation
 	* Text cleaning
