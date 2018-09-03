@@ -12,7 +12,7 @@ It is the final project for the course ["Data Science. NLP"](https://github.com/
 * [Model Description](#model-description)
 	* [Estimator](#estimator)
 	* [Features](#features)
-	* [Performance](#performance)
+	* [Evaluation Metrics](#evaluation-metrics)
 * [Getting Started](#getting-started)
 * [License](#license)
 <!--te-->
@@ -66,14 +66,15 @@ Here is the final set of features (please see [here](src/pipeline.py)):
 	* No. of chars
 	* No. of N-grams
 
-### Performance
+### Evaluation Metrics
 
+Averaged across folds metrics and confusion matrix:
 * ROC-AUC: 99.5%
 * Accuracy: 98.4%
 * Precision: 96.4%
 * F1: 96.03%
 * Recall: 95.6%
-* Averaged across folds confusion matrix:
+* Confusion matrix:
 
     | | Ham | Spam |
     |---| --- | --- |
