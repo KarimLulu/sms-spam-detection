@@ -42,7 +42,7 @@ ML Pipeline and Transformers were built on top of scikit's Pipeline/TransformerM
 * Stratified CV splitting
 * Grid search with 5-fold CV
 
-After determining the best model and parameters, it is fitted to a whole data set and dumped altogether with detailed metadata (performance on folds) [here](data/models).
+After determining the best model and parameters, it is fitted to a whole data set and dumped altogether with detailed metadata (performance on folds) [here](https://github.com/KarimLulu/sms-spam-detection/tree/master/data/models).
 
 
 ## Model Description
@@ -53,7 +53,7 @@ Logistic regression with L2 penalty was selected as the best performing model.
 
 ### Features
 
-Here is the final set of features (please see [here](src/pipeline.py)):
+Here is the final set of features (please see [here](https://github.com/KarimLulu/sms-spam-detection/blob/fb3e8ab553ea5e9231f98db98824a9c388904892/src/pipeline.py#L88)):
 
 * [TF-IDF](https://en.wikipedia.org/wiki/Tf%E2%80%93idf) character 4-grams with top 4000 features
 * Pattern based features:
