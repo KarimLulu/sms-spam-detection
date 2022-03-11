@@ -4,3 +4,4 @@ source sms-env/bin/activate
 curl https://bootstrap.pypa.io/get-pip.py | python
 
 pip install -r requirements/common.txt
+python3 -c "import nltk; nltk.download('punkt');"
