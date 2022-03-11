@@ -1,4 +1,3 @@
-import re
 import json
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.naive_bayes import MultinomialNB
@@ -12,33 +11,9 @@ import sys
 
 from src.transformers import (ModelTransformer, TfIdfLen, MatchPattern, Length, Converter,
                               TokenFeatures, Select)
-from src.config import data_dir, models_dir, model_id, DATAFILE
+from src.config import (data_dir, models_dir, model_id, DATAFILE, PATTERNS, NAMES, TF_PARAMS,
+                        TOKEN_FEATURES, HAM_LABEL, SPAM_LABEL)
 from src.helpers import print_dict, save_model, load_model, calc_metrics, _to_int
-
-CURRENCY_PATT = u"[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]"
-PATTERNS = [(r"[\(\d][\d\s\(\)-]{8,15}\d", {"name": "phone",
-                                            "is_len": 0}),
-            (r"%|taxi|скид(?:к|очн)|ц[іе]н|знижк", {"name": "custom",
-                                                    "is_len": 0,
-                                                    "flags": re.I | re.U}),
-            (r"[.]", {"name": "dot", "is_len": 0}),
-            (CURRENCY_PATT, {"name": "currency", "is_len": 0, "flags": re.U}),
-            (r":\)|:\(|-_-|:p|:v|:\*|:o|B-\)|:’\(", {"name": "emoji", "is_len": 0, "flags": re.U}),
-            (r"[0-9]{2,4}[.-/][0-9]{2,4}[.-/][0-9]{2,4}", {"name": "date", "is_len": 0})
-            ]
-NAMES = ["logit"]
-TF_PARAMS = {"lowercase": True,
-             "analyzer": "char_wb",
-             "stop_words": None,
-             "ngram_range": (4, 4),
-             "min_df": 0.0,
-             "max_df": 1.0,
-             "preprocessor": None,
-             "max_features": 4000,
-             "norm": "l2" * 0,
-             "use_idf": 1
-             }
-TOKEN_FEATURES = ["is_upper", "is_lower"]
 
 
 def build_ensemble(model_list, estimator=None):
@@ -70,7 +45,7 @@ def get_tokens_pipe(features=None):
     token_features = TokenFeatures(features=features)
     tok_pipe = [
         ("selector", Select(["tokens"], to_np=0)),
-        ('tok', token_features)]
+        ("tok", token_features)]
     return Pipeline(tok_pipe)
 
 
@@ -121,7 +96,7 @@ def build_classifier(name, seed=25):
     model = None
     if name == "logit":
         model = LogisticRegression(C=1, class_weight="balanced", random_state=seed, penalty="l2")
-        model.grid_s = {f'{name}__C': (0.1, 0.2, 0.3, 0.4, 0.5, 1, 5, 10)}
+        model.grid_s = {f'{name}__C': (0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 5, 10)}
         model.grid_b = {f'{name}__C': [(1,)]}
     elif name == "nb":
         model = MultinomialNB(alpha=0.1)
@@ -156,8 +131,8 @@ def build_all_pipes(tf_params, vec_mode="add", names=None, patterns=None, featur
     if names is None:
         names = NAMES
     clfs = get_all_classifiers(names)
-    return [get_estimator_pipe(clf.name, clf, tf_params, vec_mode, patterns=patterns, features=features) for clf in
-            clfs]
+    return [get_estimator_pipe(clf.name, clf, tf_params, vec_mode, patterns=patterns, features=features)
+            for clf in clfs if clf is not None]
 
 
 def preprocess(data):
@@ -168,7 +143,7 @@ def preprocess(data):
 
 
 def load_data(filename=DATAFILE):
-    data = pd.read_excel(data_dir / filename)
+    data = pd.read_excel(io=data_dir / filename, sheet_name=0)
     data = preprocess(data)
     return data
 
@@ -225,7 +200,7 @@ def grid_search(tf_params=None, filename=DATAFILE, random_state=25, vec_mode="al
             print(f"Best score on training set (CV): {gs.best_score_:0.3f}")
             print("Best parameters set:")
             for param, mean_score, std in zip(params, mean_scores, std_scores):
-                print(f"{mean_score:0.4f} (+/-{std / 2:0.4f}) for {params}")
+                print(f"{mean_score:0.4f} (+/-{std / 2:0.4f}) for {param}")
         best.append(gs.best_estimator_)
         best_scores.append({"params": gs.best_params_,
                             "mean": mean_scores[best_idx],
@@ -237,7 +212,7 @@ def grid_search(tf_params=None, filename=DATAFILE, random_state=25, vec_mode="al
 def analyze_model(model=None, modelfile=None, datafile=DATAFILE, n_splits=5, random_state=25,
                   labels=None, mode="binary", log_fold=True, log_total=True):
     if labels is None:
-        labels = ["ham", "spam"]
+        labels = [HAM_LABEL, SPAM_LABEL]
     if model is None:
         model = load_model(modelfile)
 
