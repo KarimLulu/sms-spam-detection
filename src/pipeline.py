@@ -338,7 +338,7 @@ def construct_metadata(scores, agg_scores, params, fold_results, conf_matrix, fn
 def main(model_id=model_id):
     model, params, agg_scores, scores, fold_results, mean_conf_matrix, fnp = train()
     metadata = construct_metadata(scores, agg_scores, params, fold_results, mean_conf_matrix, fnp)
-    save_model(model, f"{model_id}.model")
+    save_model(model, model_id)
     with open(models_dir / f"{model_id}_metadata.json", "w+") as f:
         json.dump(metadata, f, indent=4)
     return 0
