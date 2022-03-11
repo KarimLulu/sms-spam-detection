@@ -9,6 +9,7 @@ handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s -
 log.addHandler(handler)
 log.setLevel(logging.INFO)
 
+
 def post_response(f):
     def wrapped(*args, **kwargs):
         try:

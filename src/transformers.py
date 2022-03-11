@@ -1,15 +1,14 @@
 import numpy as np
 import pandas as pd
 import re
-import regex
 from scipy import sparse
 from sklearn.base import BaseEstimator, TransformerMixin, ClassifierMixin
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import binarize
-from nltk.tokenize import word_tokenize
+
 
 def unsquash(X):
-    ''' (n,) -> (n,1) '''
+    """ (n,) -> (n,1) """
     if len(X.shape) == 1 or X.shape[0] == 1:
         return np.asarray(X).reshape((len(X), 1))
     else:
@@ -17,19 +16,20 @@ def unsquash(X):
 
 
 def squash(X):
-    ''' (n,1) -> (n,) '''
+    """ (n,1) -> (n,) """
     return np.squeeze(np.asarray(X))
 
 
 def is_lower(tokens):
     return any(token.islower() for token in tokens)
 
+
 def is_upper(tokens):
     return any(token.isupper() for token in tokens)
 
 
 class Transformer(TransformerMixin):
-    '''Base class for pure transformers'''
+    """Base class for pure transformers"""
 
     def fit(self, X, y=None, **fit_params):
         return self
@@ -52,7 +52,7 @@ class Unsquash(Transformer):
 
 
 class ModelTransformer(TransformerMixin):
-    ''' Use model predictions as transformer '''
+    """ Use model predictions as transformer """
     def __init__(self, model, probs=True):
         self.model = model
         self.probs = probs
@@ -74,9 +74,6 @@ class ModelTransformer(TransformerMixin):
 
 class Converter(Transformer):
 
-    def __init__(self):
-        pass
-
     def transform(self, X, **kwargs):
         if isinstance(X, np.ndarray):
             return X
@@ -97,7 +94,7 @@ class Length(Transformer):
 
     def transform(self, X, **kwargs):
         if self.use_tfidf:
-            res = (X>0).sum(axis=1)
+            res = (X > 0).sum(axis=1)
         else:
             res = np.vectorize(len)(X)
         return unsquash(res)
@@ -107,6 +104,7 @@ class TfIdfLen(Transformer):
     def __init__(self, add_len=True, **tfidf_params):
         self.add_len = add_len
         self.tfidf_params = tfidf_params.copy()
+        self.vectorizer = None
 
     def get_params(self, deep=True):
         output = self.tfidf_params
@@ -128,6 +126,7 @@ class TfIdfLen(Transformer):
             lens = (res > 0).sum(axis=1)
             res = sparse.hstack([res, lens]).tocsr()
         return res
+
 
 class MatchPattern(Transformer):
 
@@ -152,7 +151,9 @@ class MatchPattern(Transformer):
 
 class TokenFeatures(Transformer):
 
-    def __init__(self, features=list()):
+    def __init__(self, features=None):
+        if features is None:
+            features = []
         self.features = features
 
     def get_params(self, deep=True):
@@ -173,7 +174,7 @@ class TokenFeatures(Transformer):
 
 
 class Select(Transformer):
-    '''  Extract specified columns from a pandas df or numpy array '''
+    """  Extract specified columns from a pandas df or numpy array """
 
     def __init__(self, columns=0, to_np=True):
         self.columns = columns
@@ -214,14 +215,14 @@ class EnsembleBinaryClassifier(BaseEstimator, ClassifierMixin, TransformerMixin)
         return self
 
     def predict_proba(self, X):
-        ''' Predict (weighted) probabilities '''
+        """ Predict (weighted) probabilities """
         probs = np.average(X, axis=1, weights=self.weights)
         return np.column_stack((1-probs, probs))
 
     def predict(self, X):
-        ''' Predict class labels. '''
+        """ Predict class labels. """
         if self.mode == 'average':
-            return binarize(self.predict_proba(X)[:,[1]], 0.5)
+            return binarize(self.predict_proba(X)[:, [1]], threshold=.5)
         else:
-            res = binarize(X, 0.5)
+            res = binarize(X, threshold=.5)
             return np.apply_along_axis(lambda x: np.bincount(x.astype(int), self.weights).argmax(), axis=1, arr=res)

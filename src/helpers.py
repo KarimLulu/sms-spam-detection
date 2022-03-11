@@ -8,10 +8,12 @@ from nltk.tokenize import word_tokenize
 
 from src.config import models_dir, model_extension
 
+
 def init_dir(dir_name):
     """Recursively creates directory dir_name and doesn't raise exception if it exists"""
     if not dir_name.exists():
         Path(dir_name).mkdir(parents=True)
+
 
 def save_model(model, name, models_dir=models_dir, extension=model_extension):
     init_dir(models_dir)
@@ -19,15 +21,18 @@ def save_model(model, name, models_dir=models_dir, extension=model_extension):
     with path.open("wb+") as f:
         dill.dump(model, f)
 
+
 def load_model(models_dir=models_dir, name='', extension=model_extension):
     source = (models_dir / name).with_suffix(extension)
     with source.open("rb") as f:
         model = dill.load(f)
     return model
 
+
 def print_dict(data):
     for key, value in data.items():
         print(f"{key}: {value:0.3f}")
+
 
 def calc_metrics(y_test, pred, proba=None, labels=None, print_=True, mode="binary"):
     output = {}
@@ -58,12 +63,14 @@ def calc_metrics(y_test, pred, proba=None, labels=None, print_=True, mode="binar
         print(report)
     return output, report, conf_matrix
 
+
 def top_tfidf_feats(row, features, top_n=25):
     topn_ids = np.argsort(row)[::-1][:top_n]
     top_feats = [(features[i], row[i]) for i in topn_ids]
     df = pd.DataFrame(top_feats)
     df.columns = ['feature', 'tfidf']
     return df
+
 
 def top_mean_feats(Xtr, features, grp_ids=None, min_tfidf=0.1, top_n=25):
     if grp_ids:
@@ -75,6 +82,7 @@ def top_mean_feats(Xtr, features, grp_ids=None, min_tfidf=0.1, top_n=25):
     tfidf_means = np.mean(D, axis=0)
     return top_tfidf_feats(tfidf_means, features, top_n)
 
+
 def top_feats_by_class(Xtr, y, features, min_tfidf=0.1, top_n=25):
     dfs = []
     labels = np.unique(y)
@@ -84,6 +92,7 @@ def top_feats_by_class(Xtr, y, features, min_tfidf=0.1, top_n=25):
         feats_df.label = label
         dfs.append(feats_df)
     return dfs
+
 
 def plot_tfidf_classfeats_h(dfs):
     fig = plt.figure(figsize=(12, 9), facecolor="w")
@@ -101,14 +110,16 @@ def plot_tfidf_classfeats_h(dfs):
         ax.barh(x, df.tfidf, align='center', color='#3F5D7D')
         ax.set_yticks(x)
         ax.set_ylim([-1, x[-1]+1])
-        yticks = ax.set_yticklabels(df.feature)
+        _ = ax.set_yticklabels(df.feature)
         plt.subplots_adjust(bottom=0.09, right=0.97, left=0.15, top=0.95, wspace=0.52)
     plt.show()
+
 
 def _to_int(items):
     return [int(item) for item in items]
 
+
 def prepare_sms(text):
     sms = pd.DataFrame({"text": [text]})
-    sms["tokens"] =  sms["text"].map(word_tokenize)
+    sms["tokens"] = sms["text"].map(word_tokenize)
     return sms

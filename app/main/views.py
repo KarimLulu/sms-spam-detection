@@ -1,23 +1,21 @@
-import warnings
-warnings.filterwarnings("ignore")
-
 from flask import render_template, make_response, flash
 
-from . import main
-from .forms import SmsForm
+from app.main.forms import SmsForm
 from src.config import model_id, THRESHOLD, SPAM_LABEL, HAM_LABEL, ROUND
 from src.helpers import load_model, prepare_sms
+from app.main import main_bp
+
 
 model = load_model(name=model_id)
 
-@main.route('/', methods=['GET', 'POST'])
+
+@main_bp.route('/', methods=['GET', 'POST'])
 def detector():
     form = SmsForm()
     headers = {'Content-Type': 'text/html; charset=UTF-8',
-               'Cache-Control': 'no-cache, no-store, must-revalidate',
+               'Cache-Control': 'no-cache, no-store, must-revalidate, public, max-age=0',
                'Pragma': 'no-cache',
-               'Expires': '0',
-               'Cache-Control': 'public, max-age=0'}
+               'Expires': '0'}
 
     if form.validate_on_submit():
         text = form.text.data
